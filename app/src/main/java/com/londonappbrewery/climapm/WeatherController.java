@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -14,6 +13,15 @@ import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import org.json.JSONObject;
+
+import cz.msebera.android.httpclient.Header;
 
 
 public class WeatherController extends AppCompatActivity {
@@ -48,10 +56,10 @@ public class WeatherController extends AppCompatActivity {
         setContentView(R.layout.weather_controller_layout);
 
         // Linking the elements in the layout to Java code
-        mCityLabel = (TextView) findViewById(R.id.locationTV);
-        mWeatherImage = (ImageView) findViewById(R.id.weatherSymbolIV);
-        mTemperatureLabel = (TextView) findViewById(R.id.tempTV);
-        ImageButton changeCityButton = (ImageButton) findViewById(R.id.changeCityButton);
+        mCityLabel = findViewById(R.id.locationTV);
+        mWeatherImage = findViewById(R.id.weatherSymbolIV);
+        mTemperatureLabel = findViewById(R.id.tempTV);
+        ImageButton changeCityButton = findViewById(R.id.changeCityButton);
 
 
         // TODO: Add an OnClickListener to the changeCityButton here:
@@ -71,7 +79,6 @@ public class WeatherController extends AppCompatActivity {
     // TODO: Add getWeatherForNewCity(String city) here:
 
 
-
     // TODO: Add getWeatherForCurrentLocation() here:
     private void getWeatherForCurrentLocation() {
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -84,6 +91,12 @@ public class WeatherController extends AppCompatActivity {
 
                 Log.d("Clima", "Latitude is: " + latitude);
                 Log.d("Clima", "Longitude is: " + longitude);
+
+                RequestParams params = new RequestParams();
+                params.put("lon", longitude);
+                params.put("lat", latitude);
+                params.put("APPID", APP_ID);
+                letsDoSomeNetworking(params);
             }
 
             @Override
@@ -113,8 +126,8 @@ public class WeatherController extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_REQUEST_CODE){
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+        if (requestCode == LOCATION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.d("Clima", "onRequestPermissionsResult() called. Permission granted!");
                 getWeatherForCurrentLocation();
             } else {
@@ -124,15 +137,28 @@ public class WeatherController extends AppCompatActivity {
     }
 
     // TODO: Add letsDoSomeNetworking(RequestParams params) here:
+    private void letsDoSomeNetworking(RequestParams params){
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get(WEATHER_URL, params, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject responseString) {
+                Log.d("Clima", "Request successful!");
+                Log.d("Clima", responseString.toString());
+            }
 
-
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                Log.d("Clima", "Request failed");
+                Log.d("Clima", errorResponse.toString());
+                Toast.makeText(WeatherController.this, "Request has failed", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
     // TODO: Add updateUI() here:
 
 
-
     // TODO: Add onPause() here:
-
 
 
 }
